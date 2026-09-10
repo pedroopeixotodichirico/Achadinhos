@@ -77,10 +77,10 @@ a{color:var(--rose-deep)}
   <section class="box" id="telaConexao">
     <h2>Conectar</h2>
     <p class="dica" style="margin:0 0 4px">Só precisa fazer isso uma vez neste celular.</p>
-    <label>Repositório <span class="dica">(usuário/nome)</span></label>
-    <input id="repo" placeholder="usuario/Achadinhos" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <label>Chave de acesso</label>
-    <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label>Repositório <span class="dica">(já preenchido, não precisa mexer)</span></label>
+    <input id="repo" value="pedroopeixotodichirico/Achadinhos" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label>Chave de acesso <span class="dica">— cole a chave que começa com github_pat_</span></label>
+    <input id="token" type="text" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <button id="btnConectar">Conectar</button>
     <div id="avisoConexao"></div>
   </section>
@@ -265,11 +265,20 @@ a{color:var(--rose-deep)}
       'X-GitHub-Api-Version': '2022-11-28'
     }, opcoes.headers || {});
     return fetch(API + caminho, opcoes).then(function (r) {
-      if (r.status === 401) throw new Error('Chave de acesso inválida ou expirada.');
-      if (r.status === 404) throw new Error('Repositório não encontrado, ou a chave não tem permissão nele.');
+      if (r.status === 401) throw new Error(
+        'A chave não foi aceita (erro 401). Ela provavelmente foi colada incompleta, ou já foi trocada. ' +
+        'Gere de novo em Regenerate token no GitHub e cole a chave inteira, sem espaços.');
+      if (r.status === 403) throw new Error(
+        'A chave é válida, mas não tem permissão de escrita (erro 403). No GitHub, confira se está com ' +
+        '"Contents: Read and write" neste repositório.');
+      if (r.status === 404) throw new Error(
+        'Repositório não encontrado (erro 404). Confira se o campo está exatamente ' +
+        '"pedroopeixotodichirico/Achadinhos", e se a chave foi gerada para esse repositório.');
       if (r.status === 409 || r.status === 422) throw new Error('O site mudou enquanto você editava. Recarregue a página e tente de novo.');
-      if (!r.ok) throw new Error('GitHub respondeu ' + r.status + '.');
+      if (!r.ok) throw new Error('O GitHub respondeu com erro ' + r.status + '. Tente de novo em alguns minutos.');
       return r.status === 204 ? null : r.json();
+    }, function () {
+      throw new Error('Sem conexão com a internet, ou o GitHub está fora do ar.');
     });
   }
   function deBase64(b64) {
@@ -448,11 +457,47 @@ a{color:var(--rose-deep)}
 
   $('categoria').addEventListener('change', function () { lembrarCategoria($('categoria').value); });
 
+  // aceita qualquer forma de escrever o repositório: URL do github, .git no fim,
+  // endereço do site publicado, espaços sobrando
+  function normalizarRepo(v) {
+    var s = String(v || '').trim();
+    s = s.replace(/^https?:\/\//i, '');
+    var pages = s.match(/^([\w-]+)\.github\.io\/([\w.\-]+)/i);      // pedro.github.io/Achadinhos
+    if (pages) return pages[1] + '/' + pages[2];
+    s = s.replace(/^(www\.)?github\.com\//i, '');
+    s = s.replace(/\.git$/i, '').replace(/\/+$/, '');
+    s = s.split(/[?#]/)[0];
+    var p = s.split('/').filter(Boolean);
+    return p.length >= 2 ? p[0] + '/' + p[1] : s;
+  }
+
+  // remove tudo que não faz parte de um token (espaço, quebra de linha, aspas que
+  // o teclado do celular às vezes gruda, e o "Bearer " se ela copiar de algum tutorial)
+  function normalizarToken(v) {
+    return String(v || '')
+      .replace(/^\s*bearer\s+/i, '')
+      .replace(/[\s "'`<>]/g, '')
+      .trim();
+  }
+
   $('btnConectar').addEventListener('click', function () {
-    var repo = $('repo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
-    var token = $('token').value.trim();
-    if (!repo || repo.indexOf('/') < 0) return avisar('avisoConexao', 'Escreva o repositório no formato usuario/nome.', 'erro');
+    var repo = normalizarRepo($('repo').value);
+    var token = normalizarToken($('token').value);
+    $('repo').value = repo;   // mostra o que foi entendido, para ela conferir
+
+    if (!repo || repo.indexOf('/') < 0) {
+      return avisar('avisoConexao', 'O repositório precisa estar no formato usuario/nome. O certo aqui é <b>pedroopeixotodichirico/Achadinhos</b>.', 'erro');
+    }
     if (!token) return avisar('avisoConexao', 'Cole a chave de acesso.', 'erro');
+    if (/^https?:/i.test($('token').value.trim())) {
+      return avisar('avisoConexao', 'Você colou um endereço de site no campo da chave. A chave é aquele texto comprido que começa com <b>github_pat_</b>.', 'erro');
+    }
+    if (!/^(github_pat_|ghp_|gho_|ghu_|ghs_)/.test(token)) {
+      return avisar('avisoConexao', 'Isso não parece uma chave do GitHub — ela começa com <b>github_pat_</b>. Confira se copiou o texto certo, inteiro.', 'erro');
+    }
+    if (token.length < 40) {
+      return avisar('avisoConexao', 'A chave ficou curta demais (' + token.length + ' caracteres), então foi copiada incompleta. Copie tudo, do <b>github_pat_</b> até o último caractere.', 'erro');
+    }
     cfg = { repo: repo, token: token };
     avisar('avisoConexao', 'Conectando…', 'info');
     carregarDados()
@@ -501,6 +546,8 @@ a{color:var(--rose-deep)}
 
   // expõe só para o teste automatizado conferir a leitura da colagem
   window.__interpretarColagem = interpretarColagem;
+  window.__normalizarRepo = normalizarRepo;
+  window.__normalizarToken = normalizarToken;
 
   /* ==================== início ==================== */
   var salvo = recuperar();
