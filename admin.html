@@ -157,19 +157,40 @@ a{color:var(--rose-deep)}
 
   /* ==================== leitura da colagem ==================== */
 
-  var LIXO = [
-    /^\s*confira[^:]{0,40}:?\s*/i,
-    /^\s*veja[^:]{0,40}:?\s*/i,
-    /^\s*olh[ae][^:]{0,40}:?\s*/i,
-    /^\s*d[aá] uma olhada[^:]{0,40}:?\s*/i,
-    /^\s*achei[^:]{0,40}:?\s*/i,
-    /^\s*compre[^:]{0,40}:?\s*/i,
-    /^\s*aproveite[^:]{0,40}:?\s*/i,
-    /\s*[|\-–—]\s*(mercado\s*livre|shopee|amazon(\.com)?(\.br)?|magalu|magazine\s*luiza|americanas)\b.*$/i,
-    /^\s*\[?\s*(shopee|mercado\s*livre|amazon)\s*\]?\s*[|\-–—:>]+\s*/i,
-    /\bfrete\s*gr[aá]tis\b/i,
-    /\b\d{1,3}%\s*off\b/i
+  var LOJAS = '(?:mercado\\s*livre|shopee|amazon(?:\\.com)?(?:\\.br)?|magalu|magazine\\s*luiza|americanas)';
+
+  // Saudação seguida de DOIS-PONTOS ou EXCLAMAÇÃO: o terminador marca onde a
+  // saudação acaba, então é seguro remover o que está entre eles.
+  var SAUDACOES = [
+    new RegExp('^\\s*(?:confira|veja|olh[ae]|achei|compre|aproveite|d[aá]\\s+uma\\s+olhada|imperd[ií]vel|corre)\\b[^:!?]{0,60}[:!?]+\\s*', 'i')
   ];
+
+  // Frases conhecidas, escritas por inteiro. Sem curinga, então não têm como
+  // engolir nome de produto — foi exatamente esse o bug de 10/09/2026.
+  var FRASES = [
+    new RegExp('^\\s*olh[ae]\\s+(?:s[óo]|que|esse|essa|este|esta|isso|aqui)?\\s*(?:eu\\s+)?(?:achei|encontrei|vi)?\\s*(?:esse|essa|este|esta)?\\s*(?:produto|achadinho|item)?\\s*(?:que\\s+)?(?:achei\\s+)?(?:n[oa]\\s+' + LOJAS + ')?\\s*', 'i'),
+    new RegExp('^\\s*(?:achei|encontrei|vi)\\s+(?:esse|essa|este|esta)?\\s*(?:produto|achadinho|item)?\\s*(?:n[oa]\\s+' + LOJAS + ')?\\s*', 'i'),
+    new RegExp('^\\s*(?:confira|veja|aproveite|compre)\\s+(?:esse|essa|este|esta)?\\s*(?:produto|achadinho|item|oferta)?\\s*(?:n[oa]\\s+' + LOJAS + ')?\\s*', 'i'),
+    new RegExp('^\\s*\\[?\\s*' + LOJAS + '\\s*\\]?\\s*[|\\-–—:>]+\\s*', 'i')
+  ];
+
+  // Rabo de mensagem de compartilhamento
+  var CAUDAS = [
+    new RegExp('[\\s\\-–—,;.]*\\bn[oa]\\s+' + LOJAS + '\\b[.!]?\\s*(?:entra\\s+aqui|confira|veja\\s+mais|aproveite|compre\\s+agora)?[.!:]*\\s*$', 'i'),
+    /[\s\-–—,;.]*\bentra\s+aqui\b[.!:]*\s*$/i,
+    /[\s\-–—,;.]*\b(?:compre|confira|veja)\s+(?:agora|aqui|mais)\b[.!:]*\s*$/i,
+    new RegExp('\\s*[|\\-–—]\\s*' + LOJAS + '\\b.*$', 'i')
+  ];
+
+  var SOLTOS = [ /\bfrete\s*gr[aá]tis\b/i, /\b\d{1,3}%\s*off\b/i, /\b(?:oferta|promo(?:ç|c)[aã]o)\s+do\s+dia\b/i ];
+
+  // Rede de segurança: só aceita a limpeza se ainda sobrar texto suficiente.
+  // Se um padrão comer quase tudo, é sinal de que ele pegou nome de produto.
+  function limparSeSobrar(t, regex) {
+    var depois = t.replace(regex, ' ').replace(/\s{2,}/g, ' ').trim();
+    var minimo = Math.max(12, Math.floor(t.length * 0.35));
+    return (depois.length >= minimo || depois.length === t.length) ? depois : t;
+  }
 
   function limparLinha(s) {
     // emojis PRIMEIRO: um 🔥 no começo impediria os padrões abaixo de casar
@@ -177,7 +198,10 @@ a{color:var(--rose-deep)}
     t = t.replace(/\s{2,}/g, ' ').trim();
     // duas passadas: "🔥 OLHA ISSO: Produto | Shopee" precisa de mais de uma limpeza
     for (var i = 0; i < 2; i++) {
-      LIXO.forEach(function (r) { t = t.replace(r, ' '); });
+      SOLTOS.forEach(function (r) { t = t.replace(r, ' '); });
+      SAUDACOES.forEach(function (r) { t = limparSeSobrar(t, r); });
+      FRASES.forEach(function (r) { t = limparSeSobrar(t, r); });
+      CAUDAS.forEach(function (r) { t = limparSeSobrar(t, r); });
       t = t.replace(/^[\s"'“”‘’\-–—:|>*•]+|[\s"'“”‘’\-–—:|>*•]+$/g, '');
       t = t.replace(/\s{2,}/g, ' ').trim();
     }
