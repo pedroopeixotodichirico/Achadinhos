@@ -180,7 +180,11 @@ a{color:var(--rose-deep)}
       t = t.replace(/^[\s"'“”‘’\-–—:|>*•]+|[\s"'“”‘’\-–—:|>*•]+$/g, '');
       t = t.replace(/\s{2,}/g, ' ').trim();
     }
-    return t;
+    // rede de segurança: palavrinhas órfãs no fim, sobra de preço removido
+    for (var j = 0; j < 4; j++) {
+      t = t.replace(/[\s,;:\-–—|]+\b(de|por|apenas|somente|s[oó]|agora|e|a|com|no|na)\b\s*$/i, '');
+    }
+    return t.replace(/[\s,;:\-–—|]+$/, '').trim();
   }
 
   // "R$ 1.234,56" | "R$57,23" | "57,23"
@@ -213,7 +217,14 @@ a{color:var(--rose-deep)}
       var ord = precos.slice(0, 2).sort(function (a, b) { return numero(a) - numero(b); });
       preco = ord[0]; precoDe = ord[1];
     }
-    precos.forEach(function (p) { resto = resto.split(p).join(' '); });
+    // remove o preço JUNTO com a palavra que o introduz ("de R$ 76,60 por R$ 70,97"),
+    // senão sobra "de por" pendurado no fim do nome
+    precos.forEach(function (p) {
+      var escapado = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      resto = resto.replace(
+        new RegExp('\\b(?:de|por|apenas|somente|s[oó]|agora|a\\s+partir\\s+de)\\s*R?\\$?\\s*' + escapado, 'gi'), ' ');
+      resto = resto.split(p).join(' ');
+    });
     resto = resto.replace(/R\$\s*/g, ' ');
 
     // 3. nome: a linha mais longa que sobrar depois da limpeza
