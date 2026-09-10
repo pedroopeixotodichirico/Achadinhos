@@ -1,6 +1,16 @@
 {
   "produtos": [
     {
+      "id": "amtw00szt",
+      "categoria": "casa",
+      "nome": "egura 4,5L Alumínio Fechamento Externo 5 Sistemas de Segurança - Rochedo Marrom Chocolate - no Mercado Livre. Entra aqui",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/2kDEySY",
+      "preco": "R$ 221,90",
+      "precoDe": "",
+      "img": "amtw00szt.webp"
+    },
+    {
       "id": "env_1788913440455_90j7an",
       "categoria": "casa",
       "nome": "Jogo De Cama 600 Fios 100% Algodão Queen 3 Peças",
