@@ -1,0 +1,104 @@
+{
+  "produtos": [
+    {
+      "id": "env_1788913440455_90j7an",
+      "categoria": "casa",
+      "nome": "Jogo De Cama 600 Fios 100% Algodão Queen 3 Peças",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/24JuQNW",
+      "preco": "R$ 57,23",
+      "precoDe": "R$ 78,90",
+      "img": "env_1788913440455_90j7an.webp"
+    },
+    {
+      "id": "p09",
+      "categoria": "beleza",
+      "nome": "Kit 3 Sabonete Líquido Chá Branco 500ml, Coala",
+      "loja": "Shopee",
+      "link": "https://s.shopee.com.br/6fh6F60yW0?share_channel_code=1",
+      "preco": "Ver preço na loja",
+      "precoDe": "",
+      "img": "p09.webp"
+    },
+    {
+      "id": "p08",
+      "categoria": "casa",
+      "nome": "Kit 4 Sacos de Lixo Perfumados Lavanda, 160 sacos",
+      "loja": "Shopee",
+      "link": "https://s.shopee.com.br/9KhrQ8eWfK?share_channel_code=1",
+      "preco": "Ver preço na loja",
+      "precoDe": "",
+      "img": "p08.webp"
+    },
+    {
+      "id": "p07",
+      "categoria": "casa",
+      "nome": "Conjunto Jogo de Travessas 3 peças Oval em Melanina, Bestfer",
+      "loja": "Shopee",
+      "link": "https://s.shopee.com.br/6fh6F8ztuZ?share_channel_code=1",
+      "preco": "Ver preço na loja",
+      "precoDe": "",
+      "img": "p07.webp"
+    },
+    {
+      "id": "p06",
+      "categoria": "casa",
+      "nome": "Multiprocessador Picador de Carne, Alho e Legumes Elétrico 2L",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/2fMdWja",
+      "preco": "R$ 76,60",
+      "precoDe": "R$ 78,97",
+      "img": "p06.webp"
+    },
+    {
+      "id": "p05",
+      "categoria": "diversao",
+      "nome": "Fone Bluetooth Xiaomi Redmi Airdots 2 TWS com microfone",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/1AjQXHt",
+      "preco": "R$ 27,08",
+      "precoDe": "R$ 48,99",
+      "img": "p05.webp"
+    },
+    {
+      "id": "p04",
+      "categoria": "beleza",
+      "nome": "Sorbet Firmador Facial Niina Secrets Skin, Eudora 80g",
+      "loja": "Shopee",
+      "link": "https://s.shopee.com.br/5LBai3EreA",
+      "preco": "Ver preço na loja",
+      "precoDe": "",
+      "img": "p04.webp"
+    },
+    {
+      "id": "p03",
+      "categoria": "beleza",
+      "nome": "Kit 4 Shorts Feminino Malha Canelada, Moda Praia",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/2a5NTfD",
+      "preco": "R$ 56,53",
+      "precoDe": "R$ 59,90",
+      "img": "p03.webp"
+    },
+    {
+      "id": "p02",
+      "categoria": "casa",
+      "nome": "Rodo de Silicone Multiuso 2 em 1, Vassoura e Limpador de Vidros",
+      "loja": "Shopee",
+      "link": "https://s.shopee.com.br/50YkJK62K3",
+      "preco": "Ver preço na loja",
+      "precoDe": "",
+      "img": "p02.webp"
+    },
+    {
+      "id": "p01",
+      "categoria": "casa",
+      "nome": "Tapete Higiênico para Cachorro Biosec, 30 unidades 60x55cm",
+      "loja": "Mercado Livre",
+      "link": "https://meli.la/2kHovKJ",
+      "preco": "R$ 39,90",
+      "precoDe": "R$ 59,90",
+      "img": "p01.webp"
+    }
+  ]
+}

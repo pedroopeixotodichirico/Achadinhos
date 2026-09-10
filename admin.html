@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Achadinhos da Cris — Painel</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%8D%EF%B8%8F</text></svg>">
+<style>
+:root{
+  --bg:#FBF3EC; --surface:#FFF; --card:#F5E7E0; --ink:#332924; --ink-soft:#7A695F;
+  --line:#E9D8CD; --rose:#CE7B74; --rose-deep:#B15F58; --sage:#889A78; --sage-soft:#DCE4D2;
+  --erro:#B3261E; --ok:#2E7D32;
+  --sans:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light dark;
+}
+:root:not([data-theme=light]){@media (prefers-color-scheme:dark){
+  --bg:#1E1815; --surface:#2A2320; --card:#332822; --ink:#F3E7DE; --ink-soft:#C7B3A6;
+  --line:#4A3B32; --rose:#E29A93; --rose-deep:#EAB0AA; --sage:#A6B896; --sage-soft:#33402A;
+  --erro:#F2B8B5; --ok:#A6D6A9;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--sans);
+     padding:0 0 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:16px 0;margin-bottom:24px}
+h1{font-size:19px;margin:0;font-weight:700}
+h1 span{color:var(--rose-deep)}
+h2{font-size:15px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:20px}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+label:first-of-type{margin-top:0}
+.dica{font-weight:400;color:var(--ink-soft);font-size:12px}
+input,select{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+input:focus,select:focus{outline:2px solid var(--rose);outline-offset:1px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{width:100%;padding:14px;border-radius:11px;border:none;background:var(--ink);color:var(--bg);
+  font:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-top:18px}
+button:disabled{opacity:.5;cursor:default}
+button.sec{background:transparent;color:var(--ink-soft);border:1px solid var(--line);margin-top:10px}
+.aviso{padding:12px 14px;border-radius:11px;font-size:13.5px;line-height:1.5;margin-top:14px}
+.aviso.erro{background:color-mix(in srgb,var(--erro) 14%,transparent);color:var(--erro)}
+.aviso.ok{background:var(--sage-soft);color:var(--ink)}
+.aviso.info{background:var(--card);color:var(--ink-soft)}
+.prod{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.prod:last-child{border-bottom:none}
+.prod img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:9px;flex:none;border:1px solid var(--line)}
+.prod .txt{flex:1;min-width:0}
+.prod .nome{font-size:13.5px;font-weight:600;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod .meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
+.prod button{width:auto;margin:0;padding:9px 13px;background:transparent;border:1px solid var(--line);
+  color:var(--erro);font-size:13px;border-radius:9px;flex:none}
+#previa{margin-top:12px;display:none}
+#previa img{width:100px;height:100px;object-fit:contain;background:#fff;border-radius:11px;border:1px solid var(--line)}
+.oculto{display:none!important}
+a{color:var(--rose-deep)}
+</style>
+</head>
+<body>
+
+<header><div class="wrap"><h1>Achadinhos <span>da Cris</span> · Painel</h1></div></header>
+
+<main class="wrap">
+
+  <!-- ============ conexão ============ -->
+  <section class="box" id="telaConexao">
+    <h2>Conectar</h2>
+    <p class="dica" style="margin:0 0 4px">Só precisa fazer isso uma vez neste celular.</p>
+    <label>Repositório <span class="dica">(usuário/nome — ex: pedro/achadinhos)</span></label>
+    <input id="repo" placeholder="usuario/achadinhos" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label>Chave de acesso</label>
+    <input id="token" type="password" placeholder="ghp_..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="btnConectar">Conectar</button>
+    <div id="avisoConexao"></div>
+  </section>
+
+  <!-- ============ novo achadinho ============ -->
+  <section class="box oculto" id="telaNovo">
+    <h2>Novo achadinho</h2>
+    <label>Link do produto <span class="dica">— o link direto do produto, não o link do seu perfil</span></label>
+    <input id="link" type="url" inputmode="url" placeholder="https://..." autocapitalize="off" spellcheck="false">
+    <label>Nome do produto</label>
+    <input id="nome" placeholder="Ex: Jogo de cama 600 fios queen">
+    <div class="dupla">
+      <div>
+        <label>Preço</label>
+        <input id="preco" inputmode="decimal" placeholder="57,23">
+      </div>
+      <div>
+        <label>Preço antes <span class="dica">(opcional)</span></label>
+        <input id="precoDe" inputmode="decimal" placeholder="78,90">
+      </div>
+    </div>
+    <label>Categoria</label>
+    <select id="categoria">
+      <option value="casa">🏠 Casa</option>
+      <option value="beleza">💄 Beleza</option>
+      <option value="diversao">🎲 Diversão</option>
+    </select>
+    <label>Foto <span class="dica">— print ou foto salva do produto</span></label>
+    <input id="foto" type="file" accept="image/*">
+    <div id="previa"><img id="previaImg" alt="Prévia da foto"></div>
+    <button id="btnPublicar">Publicar no site</button>
+    <div id="avisoNovo"></div>
+  </section>
+
+  <!-- ============ lista ============ -->
+  <section class="box oculto" id="telaLista">
+    <h2>No site agora (<span id="contagem">0</span>)</h2>
+    <div id="lista"></div>
+    <button class="sec" id="btnSair">Desconectar este celular</button>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = 'https://api.github.com';
+  var cfg = null;                       // {repo, token}
+  var dados = null;                     // conteúdo do produtos.json
+  var shaJson = null;                   // sha do arquivo, exigido pelo GitHub para gravar
+  var fotoPronta = null;                // {base64, ext}
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function avisar(onde, texto, tipo) {
+    $(onde).innerHTML = texto ? '<div class="aviso ' + (tipo || 'info') + '">' + texto + '</div>' : '';
+  }
+
+  function guardar(c) { try { localStorage.setItem('achadinhos.cfg', JSON.stringify(c)); } catch (e) {} }
+  function recuperar() {
+    try { return JSON.parse(localStorage.getItem('achadinhos.cfg') || 'null'); } catch (e) { return null; }
+  }
+
+  // ---------- GitHub ----------
+  function gh(caminho, opcoes) {
+    opcoes = opcoes || {};
+    opcoes.headers = Object.assign({
+      'Authorization': 'Bearer ' + cfg.token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }, opcoes.headers || {});
+    return fetch(API + caminho, opcoes).then(function (r) {
+      if (r.status === 401) throw new Error('Chave de acesso inválida ou expirada.');
+      if (r.status === 404) throw new Error('Repositório não encontrado, ou a chave não tem permissão nele.');
+      if (r.status === 409 || r.status === 422) throw new Error('O site mudou enquanto você editava. Recarregue a página e tente de novo.');
+      if (!r.ok) throw new Error('GitHub respondeu ' + r.status + '.');
+      return r.status === 204 ? null : r.json();
+    });
+  }
+
+  // decodifica base64 -> texto, preservando acentos
+  function deBase64(b64) {
+    var bin = atob(b64.replace(/\n/g, ''));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  function paraBase64(texto) {
+    var bytes = new TextEncoder().encode(texto), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function carregarDados() {
+    return gh('/repos/' + cfg.repo + '/contents/produtos.json').then(function (r) {
+      shaJson = r.sha;
+      dados = JSON.parse(deBase64(r.content));
+      if (!Array.isArray(dados.produtos)) dados.produtos = [];
+      return dados;
+    });
+  }
+
+  function gravarJson(mensagem) {
+    return gh('/repos/' + cfg.repo + '/contents/produtos.json', {
+      method: 'PUT',
+      body: JSON.stringify({
+        message: mensagem,
+        content: paraBase64(JSON.stringify(dados, null, 2)),
+        sha: shaJson
+      })
+    }).then(function (r) { shaJson = r.content.sha; });
+  }
+
+  function gravarFoto(caminho, base64) {
+    return gh('/repos/' + cfg.repo + '/contents/' + caminho, {
+      method: 'PUT',
+      body: JSON.stringify({ message: 'foto: ' + caminho, content: base64 })
+    });
+  }
+
+  // ---------- foto: encolhe no próprio celular antes de enviar ----------
+  function prepararFoto(arquivo) {
+    return new Promise(function (ok, falha) {
+      var leitor = new FileReader();
+      leitor.onerror = function () { falha(new Error('Não consegui ler essa imagem.')); };
+      leitor.onload = function () {
+        var im = new Image();
+        im.onerror = function () { falha(new Error('Arquivo de imagem inválido.')); };
+        im.onload = function () {
+          var lado = 600;
+          var escala = Math.min(1, lado / Math.max(im.width, im.height));
+          var l = Math.round(im.width * escala), a = Math.round(im.height * escala);
+          var c = document.createElement('canvas');
+          c.width = l; c.height = a;
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, l, a);
+          ctx.drawImage(im, 0, 0, l, a);
+          var suportaWebp = c.toDataURL('image/webp').indexOf('image/webp') === 5;
+          var tipo = suportaWebp ? 'image/webp' : 'image/jpeg';
+          var url = c.toDataURL(tipo, 0.82);
+          ok({ base64: url.split(',')[1], ext: suportaWebp ? 'webp' : 'jpg', previa: url });
+        };
+        im.src = leitor.result;
+      };
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  // ---------- telas ----------
+  function mostrarPainel() {
+    $('telaConexao').classList.add('oculto');
+    $('telaNovo').classList.remove('oculto');
+    $('telaLista').classList.remove('oculto');
+    desenharLista();
+  }
+
+  function desenharLista() {
+    var alvo = $('lista');
+    $('contagem').textContent = dados.produtos.length;
+    if (!dados.produtos.length) { alvo.innerHTML = '<p class="dica">Nenhum achadinho publicado ainda.</p>'; return; }
+    alvo.innerHTML = '';
+    dados.produtos.forEach(function (p) {
+      var base = 'https://raw.githubusercontent.com/' + cfg.repo + '/main/';
+      var linha = document.createElement('div');
+      linha.className = 'prod';
+      linha.innerHTML =
+        '<img src="' + base + p.img + '" alt="" loading="lazy">' +
+        '<div class="txt"><div class="nome"></div>' +
+        '<div class="meta">' + (p.preco || 'sem preço') + ' · ' + (p.loja || p.categoria) + '</div></div>' +
+        '<button type="button">Excluir</button>';
+      linha.querySelector('.nome').textContent = p.nome;
+      linha.querySelector('button').addEventListener('click', function () { excluir(p); });
+      alvo.appendChild(linha);
+    });
+  }
+
+  function excluir(p) {
+    if (!confirm('Tirar "' + p.nome + '" do site?')) return;
+    dados.produtos = dados.produtos.filter(function (x) { return x.id !== p.id; });
+    avisar('avisoNovo', 'Removendo...', 'info');
+    gravarJson('remove: ' + p.nome)
+      .then(function () {
+        desenharLista();
+        avisar('avisoNovo', 'Removido. O site atualiza em cerca de 1 minuto.', 'ok');
+      })
+      .catch(function (e) {
+        avisar('avisoNovo', e.message, 'erro');
+        carregarDados().then(desenharLista);
+      });
+  }
+
+  function detectarLoja(link) {
+    var l = (link || '').toLowerCase();
+    if (l.indexOf('mercadolivre') > -1 || l.indexOf('meli.la') > -1 || l.indexOf('mercadolivre.com') > -1) return 'Mercado Livre';
+    if (l.indexOf('shopee') > -1) return 'Shopee';
+    if (l.indexOf('amazon') > -1 || l.indexOf('amzn') > -1) return 'Amazon';
+    if (l.indexOf('magazineluiza') > -1 || l.indexOf('magalu') > -1) return 'Magalu';
+    return '';
+  }
+
+  function normalizarPreco(v) {
+    v = (v || '').trim();
+    if (!v) return '';
+    return /^R\$/i.test(v) ? v : 'R$ ' + v;
+  }
+
+  // ---------- eventos ----------
+  $('btnConectar').addEventListener('click', function () {
+    var repo = $('repo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
+    var token = $('token').value.trim();
+    if (!repo || repo.indexOf('/') < 0) return avisar('avisoConexao', 'Escreva o repositório no formato usuario/nome.', 'erro');
+    if (!token) return avisar('avisoConexao', 'Cole a chave de acesso.', 'erro');
+    cfg = { repo: repo, token: token };
+    avisar('avisoConexao', 'Conectando...', 'info');
+    carregarDados()
+      .then(function () { guardar(cfg); avisar('avisoConexao', ''); mostrarPainel(); })
+      .catch(function (e) { cfg = null; avisar('avisoConexao', e.message, 'erro'); });
+  });
+
+  $('foto').addEventListener('change', function (ev) {
+    var arq = ev.target.files && ev.target.files[0];
+    if (!arq) { fotoPronta = null; $('previa').style.display = 'none'; return; }
+    avisar('avisoNovo', 'Preparando a foto...', 'info');
+    prepararFoto(arq)
+      .then(function (r) {
+        fotoPronta = r;
+        $('previaImg').src = r.previa;
+        $('previa').style.display = 'block';
+        avisar('avisoNovo', '');
+      })
+      .catch(function (e) { fotoPronta = null; avisar('avisoNovo', e.message, 'erro'); });
+  });
+
+  $('btnPublicar').addEventListener('click', function () {
+    var link = $('link').value.trim();
+    var nome = $('nome').value.trim();
+    if (!link) return avisar('avisoNovo', 'Falta o link do produto.', 'erro');
+    if (!nome) return avisar('avisoNovo', 'Falta o nome do produto.', 'erro');
+    if (!fotoPronta) return avisar('avisoNovo', 'Escolha uma foto do produto.', 'erro');
+
+    var botao = $('btnPublicar');
+    botao.disabled = true;
+    avisar('avisoNovo', 'Publicando...', 'info');
+
+    var id = 'a' + Date.now().toString(36);
+    var caminhoFoto = id + '.' + fotoPronta.ext;
+
+    gravarFoto(caminhoFoto, fotoPronta.base64)
+      .then(function () { return carregarDados(); })   // relê para não sobrescrever mudança de outro celular
+      .then(function () {
+        dados.produtos.unshift({                        // no topo: mais novo primeiro
+          id: id,
+          categoria: $('categoria').value,
+          nome: nome,
+          loja: detectarLoja(link),
+          link: link,
+          preco: normalizarPreco($('preco').value),
+          precoDe: normalizarPreco($('precoDe').value),
+          img: caminhoFoto
+        });
+        return gravarJson('novo achadinho: ' + nome);
+      })
+      .then(function () {
+        ['link', 'nome', 'preco', 'precoDe', 'foto'].forEach(function (c) { $(c).value = ''; });
+        fotoPronta = null;
+        $('previa').style.display = 'none';
+        desenharLista();
+        avisar('avisoNovo', 'Publicado. O site atualiza sozinho em cerca de 1 minuto.', 'ok');
+      })
+      .catch(function (e) { avisar('avisoNovo', e.message, 'erro'); })
+      .then(function () { botao.disabled = false; });
+  });
+
+  $('btnSair').addEventListener('click', function () {
+    if (!confirm('Desconectar? Você vai precisar colar a chave de novo.')) return;
+    try { localStorage.removeItem('achadinhos.cfg'); } catch (e) {}
+    location.reload();
+  });
+
+  // ---------- início ----------
+  var salvo = recuperar();
+  if (salvo && salvo.repo && salvo.token) {
+    cfg = salvo;
+    carregarDados()
+      .then(mostrarPainel)
+      .catch(function (e) {
+        cfg = null;
+        $('repo').value = salvo.repo;
+        avisar('avisoConexao', e.message + ' Cole a chave de novo.', 'erro');
+      });
+  }
+})();
+</script>
+</body>
+</html>
