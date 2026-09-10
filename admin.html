@@ -97,8 +97,10 @@ a{color:var(--rose-deep)}
       <div class="achou" id="achou"></div>
     </div>
 
-    <label>Link do produto <span class="dica">— o link direto do produto, não o do seu perfil</span></label>
+    <label>Link do produto</label>
     <input id="link" type="url" inputmode="url" placeholder="https://..." autocapitalize="off" spellcheck="false">
+    <button class="sec" id="btnConferirLink" style="margin-top:8px">🔍 Abrir o link para conferir</button>
+    <div id="avisoLink"></div>
     <label>Nome do produto</label>
     <input id="nome" placeholder="Ex: Jogo de cama 600 fios queen">
     <div class="dupla">
@@ -308,6 +310,7 @@ a{color:var(--rose-deep)}
   function aplicarColagem() {
     var r = interpretarColagem($('colagem').value);
     if (!r) { $('achou').style.display = 'none'; return; }
+    setTimeout(avaliarLink, 0);
     var achados = [];
     if (r.link)    { $('link').value = r.link;       achados.push('link'); }
     if (r.nome)    { $('nome').value = r.nome;       achados.push('nome'); }
@@ -475,6 +478,33 @@ a{color:var(--rose-deep)}
       .catch(function (e) { avisar('avisoNovo', e.message, 'erro'); carregarDados().then(desenharLista); });
   }
 
+  // Link de PERFIL de afiliado leva a uma vitrine, não ao produto: quem clica
+  // não encontra o que foi anunciado. Aconteceu de verdade em 10/09/2026.
+  function ehLinkDePerfil(link) {
+    return /\/(social|perfil|profile|loja|store|seller)\//i.test(String(link || ''));
+  }
+  // Links curtos escondem o destino, e o navegador não pode segui-los (CORS).
+  function ehLinkCurto(link) {
+    return /^https?:\/\/(meli\.la|s\.shopee\.com\.br|amzn\.to|bit\.ly|shope\.ee|mercadolivre\.com\/sec)\b/i.test(String(link || ''));
+  }
+
+  function avaliarLink() {
+    var l = $('link').value.trim();
+    if (!l) return avisar('avisoLink', '');
+    if (ehLinkDePerfil(l)) {
+      avisar('avisoLink', '<b>Esse link é do seu perfil, não do produto.</b> Quem clicar vai cair na sua vitrine ' +
+             'e não vai achar este item. Volte na loja, abra a página do produto e gere o link de lá.', 'erro');
+      return false;
+    }
+    if (ehLinkCurto(l)) {
+      avisar('avisoLink', 'Link encurtado: não tenho como ver para onde ele vai. Toque em <b>Abrir o link para conferir</b> ' +
+             'e veja se cai na página deste produto — se cair na sua vitrine, o link está errado.', 'info');
+      return true;
+    }
+    avisar('avisoLink', '');
+    return true;
+  }
+
   function detectarLoja(link) {
     var l = (link || '').toLowerCase();
     if (/mercadolivre|meli\.la|mlstatic/.test(l)) return 'Mercado Livre';
@@ -497,6 +527,12 @@ a{color:var(--rose-deep)}
 
   /* ==================== eventos ==================== */
 
+  $('link').addEventListener('input', avaliarLink);
+  $('btnConferirLink').addEventListener('click', function () {
+    var l = $('link').value.trim();
+    if (!l) return avisar('avisoLink', 'Cole o link primeiro.', 'erro');
+    window.open(l, '_blank', 'noopener');
+  });
   $('colagem').addEventListener('input', aplicarColagem);
   $('colagem').addEventListener('paste', function () { setTimeout(aplicarColagem, 0); });
 
@@ -592,6 +628,10 @@ a{color:var(--rose-deep)}
     var link = $('link').value.trim(), nome = $('nome').value.trim();
     if (!link) return avisar('avisoNovo', 'Falta o link do produto.', 'erro');
     if (!nome) return avisar('avisoNovo', 'Falta o nome do produto.', 'erro');
+    if (ehLinkDePerfil(link)) {
+      avaliarLink();
+      return avisar('avisoNovo', 'Não publiquei: esse link leva à sua vitrine, não a este produto. Troque pelo link da página do produto.', 'erro');
+    }
     if (!fotoPronta) return avisar('avisoNovo', 'Falta a foto do produto.', 'erro');
 
     var botao = $('btnPublicar');
@@ -632,6 +672,8 @@ a{color:var(--rose-deep)}
   window.__normalizarRepo = normalizarRepo;
   window.__normalizarToken = normalizarToken;
   window.__tituloDoEndereco = tituloDoEndereco;
+  window.__ehLinkDePerfil = ehLinkDePerfil;
+  window.__ehLinkCurto = ehLinkCurto;
 
   /* ==================== início ==================== */
   var salvo = recuperar();

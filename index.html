@@ -10,7 +10,6 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#FBF3EC">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%8D%EF%B8%8F</text></svg>">
-<link rel="preload" href="produtos.json" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600;700&display=swap">
@@ -349,7 +348,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px}
   }
 
   // busca sempre a versão mais nova, sem cache, para a Cris ver na hora
-  fetch('produtos.json', { cache: 'no-cache' })
+  fetch('produtos.json?v=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) { desenhar(Array.isArray(d.produtos) ? d.produtos : []); })
     .catch(function () {
