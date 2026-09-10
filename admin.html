@@ -31,9 +31,10 @@ h2{font-size:15px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.06em;
 label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
 label:first-of-type{margin-top:0}
 .dica{font-weight:400;color:var(--ink-soft);font-size:12px}
-input,select{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line);
+input,select,textarea{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line);
   background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
-input:focus,select:focus{outline:2px solid var(--rose);outline-offset:1px}
+textarea{min-height:92px;resize:vertical;line-height:1.45}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--rose);outline-offset:1px}
 .dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 button{width:100%;padding:14px;border-radius:11px;border:none;background:var(--ink);color:var(--bg);
   font:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-top:18px}
@@ -43,6 +44,14 @@ button.sec{background:transparent;color:var(--ink-soft);border:1px solid var(--l
 .aviso.erro{background:color-mix(in srgb,var(--erro) 14%,transparent);color:var(--erro)}
 .aviso.ok{background:var(--sage-soft);color:var(--ink)}
 .aviso.info{background:var(--card);color:var(--ink-soft)}
+
+/* área de colagem em destaque */
+.colar{background:var(--card);border:1px dashed var(--rose);border-radius:14px;padding:16px;margin-bottom:6px}
+.colar h3{margin:0 0 4px;font-size:14.5px;font-weight:700;font-family:inherit}
+.colar p{margin:0 0 10px;font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+.colar textarea{background:var(--surface)}
+.achou{margin-top:10px;font-size:12.5px;color:var(--ok);font-weight:600;display:none}
+
 .prod{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .prod:last-child{border-bottom:none}
 .prod img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:9px;flex:none;border:1px solid var(--line)}
@@ -68,10 +77,10 @@ a{color:var(--rose-deep)}
   <section class="box" id="telaConexao">
     <h2>Conectar</h2>
     <p class="dica" style="margin:0 0 4px">Só precisa fazer isso uma vez neste celular.</p>
-    <label>Repositório <span class="dica">(usuário/nome — ex: pedro/achadinhos)</span></label>
-    <input id="repo" placeholder="usuario/achadinhos" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label>Repositório <span class="dica">(usuário/nome)</span></label>
+    <input id="repo" placeholder="usuario/Achadinhos" autocapitalize="off" autocorrect="off" spellcheck="false">
     <label>Chave de acesso</label>
-    <input id="token" type="password" placeholder="ghp_..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="btnConectar">Conectar</button>
     <div id="avisoConexao"></div>
   </section>
@@ -79,13 +88,21 @@ a{color:var(--rose-deep)}
   <!-- ============ novo achadinho ============ -->
   <section class="box oculto" id="telaNovo">
     <h2>Novo achadinho</h2>
-    <label>Link do produto <span class="dica">— o link direto do produto, não o link do seu perfil</span></label>
+
+    <div class="colar">
+      <h3>1. Cole o que você copiou da loja</h3>
+      <p>No app do Mercado Livre, Shopee ou Amazon, toque em <b>Compartilhar → Copiar link</b> e cole aqui. Eu separo o link, o nome e o preço sozinho.</p>
+      <textarea id="colagem" placeholder="Cole aqui…" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="achou" id="achou"></div>
+    </div>
+
+    <label>Link do produto <span class="dica">— o link direto do produto, não o do seu perfil</span></label>
     <input id="link" type="url" inputmode="url" placeholder="https://..." autocapitalize="off" spellcheck="false">
     <label>Nome do produto</label>
     <input id="nome" placeholder="Ex: Jogo de cama 600 fios queen">
     <div class="dupla">
       <div>
-        <label>Preço</label>
+        <label>Preço <span class="dica">(opcional)</span></label>
         <input id="preco" inputmode="decimal" placeholder="57,23">
       </div>
       <div>
@@ -99,9 +116,13 @@ a{color:var(--rose-deep)}
       <option value="beleza">💄 Beleza</option>
       <option value="diversao">🎲 Diversão</option>
     </select>
-    <label>Foto <span class="dica">— print ou foto salva do produto</span></label>
-    <input id="foto" type="file" accept="image/*">
+
+    <label>2. Foto do produto</label>
+    <p class="dica" style="margin:-2px 0 8px">Segure o dedo na foto do produto na loja, escolha <b>Copiar imagem</b> e cole aqui (ou use o botão para pegar da galeria).</p>
+    <button class="sec" id="btnColarFoto" style="margin-top:0">📋 Colar foto copiada</button>
+    <input id="foto" type="file" accept="image/*" style="margin-top:10px">
     <div id="previa"><img id="previaImg" alt="Prévia da foto"></div>
+
     <button id="btnPublicar">Publicar no site</button>
     <div id="avisoNovo"></div>
   </section>
@@ -120,23 +141,111 @@ a{color:var(--rose-deep)}
   'use strict';
 
   var API = 'https://api.github.com';
-  var cfg = null;                       // {repo, token}
-  var dados = null;                     // conteúdo do produtos.json
-  var shaJson = null;                   // sha do arquivo, exigido pelo GitHub para gravar
-  var fotoPronta = null;                // {base64, ext}
-
+  var cfg = null, dados = null, shaJson = null, fotoPronta = null;
   var $ = function (id) { return document.getElementById(id); };
 
   function avisar(onde, texto, tipo) {
     $(onde).innerHTML = texto ? '<div class="aviso ' + (tipo || 'info') + '">' + texto + '</div>' : '';
   }
-
   function guardar(c) { try { localStorage.setItem('achadinhos.cfg', JSON.stringify(c)); } catch (e) {} }
   function recuperar() {
     try { return JSON.parse(localStorage.getItem('achadinhos.cfg') || 'null'); } catch (e) { return null; }
   }
+  function lembrarCategoria(v) { try { localStorage.setItem('achadinhos.cat', v); } catch (e) {} }
+  function categoriaLembrada() { try { return localStorage.getItem('achadinhos.cat'); } catch (e) { return null; } }
 
-  // ---------- GitHub ----------
+  /* ==================== leitura da colagem ==================== */
+
+  var LIXO = [
+    /^\s*confira[^:]{0,40}:?\s*/i,
+    /^\s*veja[^:]{0,40}:?\s*/i,
+    /^\s*olh[ae][^:]{0,40}:?\s*/i,
+    /^\s*d[aá] uma olhada[^:]{0,40}:?\s*/i,
+    /^\s*achei[^:]{0,40}:?\s*/i,
+    /^\s*compre[^:]{0,40}:?\s*/i,
+    /^\s*aproveite[^:]{0,40}:?\s*/i,
+    /\s*[|\-–—]\s*(mercado\s*livre|shopee|amazon(\.com)?(\.br)?|magalu|magazine\s*luiza|americanas)\b.*$/i,
+    /^\s*\[?\s*(shopee|mercado\s*livre|amazon)\s*\]?\s*[|\-–—:>]+\s*/i,
+    /\bfrete\s*gr[aá]tis\b/i,
+    /\b\d{1,3}%\s*off\b/i
+  ];
+
+  function limparLinha(s) {
+    // emojis PRIMEIRO: um 🔥 no começo impediria os padrões abaixo de casar
+    var t = String(s).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{FE0F}\u{20E3}]/gu, ' ');
+    t = t.replace(/\s{2,}/g, ' ').trim();
+    // duas passadas: "🔥 OLHA ISSO: Produto | Shopee" precisa de mais de uma limpeza
+    for (var i = 0; i < 2; i++) {
+      LIXO.forEach(function (r) { t = t.replace(r, ' '); });
+      t = t.replace(/^[\s"'“”‘’\-–—:|>*•]+|[\s"'“”‘’\-–—:|>*•]+$/g, '');
+      t = t.replace(/\s{2,}/g, ' ').trim();
+    }
+    return t;
+  }
+
+  // "R$ 1.234,56" | "R$57,23" | "57,23"
+  var RE_PRECO = /R?\$?\s?(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+
+  function numero(s) {
+    return parseFloat(String(s).replace(/\./g, '').replace(',', '.'));
+  }
+
+  function interpretarColagem(texto) {
+    var bruto = String(texto || '');
+    if (!bruto.trim()) return null;
+
+    // 1. link
+    var achouLink = bruto.match(/https?:\/\/[^\s<>"'\])]+/);
+    var link = achouLink ? achouLink[0].replace(/[.,;:]+$/, '') : '';
+    var resto = link ? bruto.replace(link, ' ') : bruto;
+
+    // 2. preços (o maior vira "preço antes")
+    var precos = [], m;
+    RE_PRECO.lastIndex = 0;
+    while ((m = RE_PRECO.exec(resto)) !== null) {
+      if (/R\$|\$/.test(m[0]) || precos.length < 2) precos.push(m[1]);
+    }
+    precos = precos.filter(function (p, i, a) { return a.indexOf(p) === i; });
+    var preco = '', precoDe = '';
+    if (precos.length === 1) {
+      preco = precos[0];
+    } else if (precos.length >= 2) {
+      var ord = precos.slice(0, 2).sort(function (a, b) { return numero(a) - numero(b); });
+      preco = ord[0]; precoDe = ord[1];
+    }
+    precos.forEach(function (p) { resto = resto.split(p).join(' '); });
+    resto = resto.replace(/R\$\s*/g, ' ');
+
+    // 3. nome: a linha mais longa que sobrar depois da limpeza
+    var nome = resto.split(/[\r\n]+/)
+      .map(limparLinha)
+      .filter(function (l) { return l.length >= 6 && /[a-zA-ZÀ-ÿ]{3}/.test(l); })
+      .sort(function (a, b) { return b.length - a.length; })[0] || '';
+    if (nome.length > 140) nome = nome.slice(0, 140).trim();
+
+    return { link: link, nome: nome, preco: preco, precoDe: precoDe };
+  }
+
+  function aplicarColagem() {
+    var r = interpretarColagem($('colagem').value);
+    if (!r) { $('achou').style.display = 'none'; return; }
+    var achados = [];
+    if (r.link)    { $('link').value = r.link;       achados.push('link'); }
+    if (r.nome)    { $('nome').value = r.nome;       achados.push('nome'); }
+    if (r.preco)   { $('preco').value = r.preco;     achados.push('preço'); }
+    if (r.precoDe) { $('precoDe').value = r.precoDe; achados.push('preço antes'); }
+    var el = $('achou');
+    if (achados.length) {
+      el.textContent = '✓ Peguei: ' + achados.join(', ') + '. Confira abaixo e corrija se precisar.';
+      el.style.display = 'block';
+    } else {
+      el.textContent = '';
+      el.style.display = 'none';
+    }
+  }
+
+  /* ==================== GitHub ==================== */
+
   function gh(caminho, opcoes) {
     opcoes = opcoes || {};
     opcoes.headers = Object.assign({
@@ -152,8 +261,6 @@ a{color:var(--rose-deep)}
       return r.status === 204 ? null : r.json();
     });
   }
-
-  // decodifica base64 -> texto, preservando acentos
   function deBase64(b64) {
     var bin = atob(b64.replace(/\n/g, ''));
     var bytes = new Uint8Array(bin.length);
@@ -165,7 +272,6 @@ a{color:var(--rose-deep)}
     for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
     return btoa(bin);
   }
-
   function carregarDados() {
     return gh('/repos/' + cfg.repo + '/contents/produtos.json').then(function (r) {
       shaJson = r.sha;
@@ -174,46 +280,39 @@ a{color:var(--rose-deep)}
       return dados;
     });
   }
-
   function gravarJson(mensagem) {
     return gh('/repos/' + cfg.repo + '/contents/produtos.json', {
       method: 'PUT',
-      body: JSON.stringify({
-        message: mensagem,
-        content: paraBase64(JSON.stringify(dados, null, 2)),
-        sha: shaJson
-      })
+      body: JSON.stringify({ message: mensagem, content: paraBase64(JSON.stringify(dados, null, 2)), sha: shaJson })
     }).then(function (r) { shaJson = r.content.sha; });
   }
-
   function gravarFoto(caminho, base64) {
     return gh('/repos/' + cfg.repo + '/contents/' + caminho, {
-      method: 'PUT',
-      body: JSON.stringify({ message: 'foto: ' + caminho, content: base64 })
+      method: 'PUT', body: JSON.stringify({ message: 'foto: ' + caminho, content: base64 })
     });
   }
 
-  // ---------- foto: encolhe no próprio celular antes de enviar ----------
+  /* ==================== foto ==================== */
+
   function prepararFoto(arquivo) {
     return new Promise(function (ok, falha) {
+      if (!arquivo || !/^image\//.test(arquivo.type || '')) return falha(new Error('Isso não é uma imagem.'));
       var leitor = new FileReader();
       leitor.onerror = function () { falha(new Error('Não consegui ler essa imagem.')); };
       leitor.onload = function () {
         var im = new Image();
         im.onerror = function () { falha(new Error('Arquivo de imagem inválido.')); };
         im.onload = function () {
-          var lado = 600;
-          var escala = Math.min(1, lado / Math.max(im.width, im.height));
+          var escala = Math.min(1, 600 / Math.max(im.width, im.height));
           var l = Math.round(im.width * escala), a = Math.round(im.height * escala);
           var c = document.createElement('canvas');
           c.width = l; c.height = a;
           var ctx = c.getContext('2d');
           ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, l, a);
           ctx.drawImage(im, 0, 0, l, a);
-          var suportaWebp = c.toDataURL('image/webp').indexOf('image/webp') === 5;
-          var tipo = suportaWebp ? 'image/webp' : 'image/jpeg';
-          var url = c.toDataURL(tipo, 0.82);
-          ok({ base64: url.split(',')[1], ext: suportaWebp ? 'webp' : 'jpg', previa: url });
+          var webp = c.toDataURL('image/webp').indexOf('image/webp') === 5;
+          var url = c.toDataURL(webp ? 'image/webp' : 'image/jpeg', 0.82);
+          ok({ base64: url.split(',')[1], ext: webp ? 'webp' : 'jpg', previa: url });
         };
         im.src = leitor.result;
       };
@@ -221,11 +320,26 @@ a{color:var(--rose-deep)}
     });
   }
 
-  // ---------- telas ----------
+  function usarFoto(arquivo) {
+    avisar('avisoNovo', 'Preparando a foto…', 'info');
+    return prepararFoto(arquivo)
+      .then(function (r) {
+        fotoPronta = r;
+        $('previaImg').src = r.previa;
+        $('previa').style.display = 'block';
+        avisar('avisoNovo', '');
+      })
+      .catch(function (e) { fotoPronta = null; avisar('avisoNovo', e.message, 'erro'); });
+  }
+
+  /* ==================== telas ==================== */
+
   function mostrarPainel() {
     $('telaConexao').classList.add('oculto');
     $('telaNovo').classList.remove('oculto');
     $('telaLista').classList.remove('oculto');
+    var cat = categoriaLembrada();
+    if (cat) $('categoria').value = cat;
     desenharLista();
   }
 
@@ -252,95 +366,117 @@ a{color:var(--rose-deep)}
   function excluir(p) {
     if (!confirm('Tirar "' + p.nome + '" do site?')) return;
     dados.produtos = dados.produtos.filter(function (x) { return x.id !== p.id; });
-    avisar('avisoNovo', 'Removendo...', 'info');
+    avisar('avisoNovo', 'Removendo…', 'info');
     gravarJson('remove: ' + p.nome)
-      .then(function () {
-        desenharLista();
-        avisar('avisoNovo', 'Removido. O site atualiza em cerca de 1 minuto.', 'ok');
-      })
-      .catch(function (e) {
-        avisar('avisoNovo', e.message, 'erro');
-        carregarDados().then(desenharLista);
-      });
+      .then(function () { desenharLista(); avisar('avisoNovo', 'Removido. Já saiu do site.', 'ok'); })
+      .catch(function (e) { avisar('avisoNovo', e.message, 'erro'); carregarDados().then(desenharLista); });
   }
 
   function detectarLoja(link) {
     var l = (link || '').toLowerCase();
-    if (l.indexOf('mercadolivre') > -1 || l.indexOf('meli.la') > -1 || l.indexOf('mercadolivre.com') > -1) return 'Mercado Livre';
-    if (l.indexOf('shopee') > -1) return 'Shopee';
-    if (l.indexOf('amazon') > -1 || l.indexOf('amzn') > -1) return 'Amazon';
-    if (l.indexOf('magazineluiza') > -1 || l.indexOf('magalu') > -1) return 'Magalu';
+    if (/mercadolivre|meli\.la|mlstatic/.test(l)) return 'Mercado Livre';
+    if (/shopee/.test(l)) return 'Shopee';
+    if (/amazon|amzn/.test(l)) return 'Amazon';
+    if (/magazineluiza|magalu/.test(l)) return 'Magalu';
     return '';
   }
-
   function normalizarPreco(v) {
     v = (v || '').trim();
     if (!v) return '';
     return /^R\$/i.test(v) ? v : 'R$ ' + v;
   }
+  function limparFormulario() {
+    ['colagem', 'link', 'nome', 'preco', 'precoDe', 'foto'].forEach(function (c) { $(c).value = ''; });
+    fotoPronta = null;
+    $('previa').style.display = 'none';
+    $('achou').style.display = 'none';
+  }
 
-  // ---------- eventos ----------
+  /* ==================== eventos ==================== */
+
+  $('colagem').addEventListener('input', aplicarColagem);
+  $('colagem').addEventListener('paste', function () { setTimeout(aplicarColagem, 0); });
+
+  $('foto').addEventListener('change', function (ev) {
+    var arq = ev.target.files && ev.target.files[0];
+    if (!arq) { fotoPronta = null; $('previa').style.display = 'none'; return; }
+    usarFoto(arq);
+  });
+
+  // foto colada: funciona pelo botão (área de transferência) e pelo Ctrl+V / colar do teclado
+  $('btnColarFoto').addEventListener('click', function () {
+    if (!navigator.clipboard || !navigator.clipboard.read) {
+      return avisar('avisoNovo', 'Este navegador não deixa colar imagem por botão. Use o seletor de arquivo abaixo, ou toque no campo e use "Colar".', 'erro');
+    }
+    avisar('avisoNovo', 'Lendo a área de transferência…', 'info');
+    navigator.clipboard.read()
+      .then(function (itens) {
+        for (var i = 0; i < itens.length; i++) {
+          var tipo = itens[i].types.filter(function (t) { return /^image\//.test(t); })[0];
+          if (tipo) return itens[i].getType(tipo).then(function (b) { return usarFoto(new File([b], 'colada', {type: b.type})); });
+        }
+        throw new Error('Não achei imagem copiada. Copie a foto do produto e tente de novo.');
+      })
+      .catch(function (e) {
+        avisar('avisoNovo', (e && e.name === 'NotAllowedError')
+          ? 'O navegador pediu permissão para ler a área de transferência — autorize e toque de novo.'
+          : (e.message || 'Não consegui ler a imagem copiada.'), 'erro');
+      });
+  });
+
+  document.addEventListener('paste', function (ev) {
+    if (!ev.clipboardData) return;
+    var itens = ev.clipboardData.items || [];
+    for (var i = 0; i < itens.length; i++) {
+      if (/^image\//.test(itens[i].type)) {
+        var arq = itens[i].getAsFile();
+        if (arq) { ev.preventDefault(); usarFoto(arq); return; }
+      }
+    }
+  });
+
+  $('categoria').addEventListener('change', function () { lembrarCategoria($('categoria').value); });
+
   $('btnConectar').addEventListener('click', function () {
     var repo = $('repo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
     var token = $('token').value.trim();
     if (!repo || repo.indexOf('/') < 0) return avisar('avisoConexao', 'Escreva o repositório no formato usuario/nome.', 'erro');
     if (!token) return avisar('avisoConexao', 'Cole a chave de acesso.', 'erro');
     cfg = { repo: repo, token: token };
-    avisar('avisoConexao', 'Conectando...', 'info');
+    avisar('avisoConexao', 'Conectando…', 'info');
     carregarDados()
       .then(function () { guardar(cfg); avisar('avisoConexao', ''); mostrarPainel(); })
       .catch(function (e) { cfg = null; avisar('avisoConexao', e.message, 'erro'); });
   });
 
-  $('foto').addEventListener('change', function (ev) {
-    var arq = ev.target.files && ev.target.files[0];
-    if (!arq) { fotoPronta = null; $('previa').style.display = 'none'; return; }
-    avisar('avisoNovo', 'Preparando a foto...', 'info');
-    prepararFoto(arq)
-      .then(function (r) {
-        fotoPronta = r;
-        $('previaImg').src = r.previa;
-        $('previa').style.display = 'block';
-        avisar('avisoNovo', '');
-      })
-      .catch(function (e) { fotoPronta = null; avisar('avisoNovo', e.message, 'erro'); });
-  });
-
   $('btnPublicar').addEventListener('click', function () {
-    var link = $('link').value.trim();
-    var nome = $('nome').value.trim();
+    var link = $('link').value.trim(), nome = $('nome').value.trim();
     if (!link) return avisar('avisoNovo', 'Falta o link do produto.', 'erro');
     if (!nome) return avisar('avisoNovo', 'Falta o nome do produto.', 'erro');
-    if (!fotoPronta) return avisar('avisoNovo', 'Escolha uma foto do produto.', 'erro');
+    if (!fotoPronta) return avisar('avisoNovo', 'Falta a foto do produto.', 'erro');
 
     var botao = $('btnPublicar');
     botao.disabled = true;
-    avisar('avisoNovo', 'Publicando...', 'info');
+    avisar('avisoNovo', 'Publicando…', 'info');
 
     var id = 'a' + Date.now().toString(36);
     var caminhoFoto = id + '.' + fotoPronta.ext;
+    var cat = $('categoria').value;
 
     gravarFoto(caminhoFoto, fotoPronta.base64)
-      .then(function () { return carregarDados(); })   // relê para não sobrescrever mudança de outro celular
+      .then(function () { return carregarDados(); })   // relê para não sobrescrever outro celular
       .then(function () {
-        dados.produtos.unshift({                        // no topo: mais novo primeiro
-          id: id,
-          categoria: $('categoria').value,
-          nome: nome,
-          loja: detectarLoja(link),
-          link: link,
-          preco: normalizarPreco($('preco').value),
-          precoDe: normalizarPreco($('precoDe').value),
+        dados.produtos.unshift({
+          id: id, categoria: cat, nome: nome, loja: detectarLoja(link), link: link,
+          preco: normalizarPreco($('preco').value), precoDe: normalizarPreco($('precoDe').value),
           img: caminhoFoto
         });
         return gravarJson('novo achadinho: ' + nome);
       })
       .then(function () {
-        ['link', 'nome', 'preco', 'precoDe', 'foto'].forEach(function (c) { $(c).value = ''; });
-        fotoPronta = null;
-        $('previa').style.display = 'none';
+        limparFormulario();
         desenharLista();
-        avisar('avisoNovo', 'Publicado. O site atualiza sozinho em cerca de 1 minuto.', 'ok');
+        avisar('avisoNovo', 'Publicado! Já está no site.', 'ok');
       })
       .catch(function (e) { avisar('avisoNovo', e.message, 'erro'); })
       .then(function () { botao.disabled = false; });
@@ -352,17 +488,18 @@ a{color:var(--rose-deep)}
     location.reload();
   });
 
-  // ---------- início ----------
+  // expõe só para o teste automatizado conferir a leitura da colagem
+  window.__interpretarColagem = interpretarColagem;
+
+  /* ==================== início ==================== */
   var salvo = recuperar();
   if (salvo && salvo.repo && salvo.token) {
     cfg = salvo;
-    carregarDados()
-      .then(mostrarPainel)
-      .catch(function (e) {
-        cfg = null;
-        $('repo').value = salvo.repo;
-        avisar('avisoConexao', e.message + ' Cole a chave de novo.', 'erro');
-      });
+    carregarDados().then(mostrarPainel).catch(function (e) {
+      cfg = null;
+      $('repo').value = salvo.repo;
+      avisar('avisoConexao', e.message + ' Cole a chave de novo.', 'erro');
+    });
   }
 })();
 </script>
