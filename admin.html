@@ -62,8 +62,14 @@ button.sec{background:transparent;color:var(--ink-soft);border:1px solid var(--l
 .prod .meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
 .prod button{width:auto;margin:0;padding:9px 13px;background:transparent;border:1px solid var(--line);
   color:var(--erro);font-size:13px;border-radius:9px;flex:none}
+/* a prévia imita o card do site: mesma altura e mesmo encaixe, para ela ver
+   de verdade como a foto vai aparecer (print da tela inteira vira uma tirinha) */
 #previa{margin-top:12px;display:none}
-#previa img{width:100px;height:100px;object-fit:contain;background:#fff;border-radius:11px;border:1px solid var(--line)}
+#previa .molde{max-width:240px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+#previa .molde .area{height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#previa .molde img{width:100%;height:100%;object-fit:contain;padding:14px;background:#fff}
+#previa .molde .rodape{padding:8px 12px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line)}
+#previa .recorte{font-size:12.5px;line-height:1.45;margin-top:10px;color:var(--rose-deep);font-weight:600;display:none}
 .oculto{display:none!important}
 a{color:var(--rose-deep)}
 </style>
@@ -124,7 +130,13 @@ a{color:var(--rose-deep)}
     <p class="dica" style="margin:-2px 0 8px">Segure o dedo na foto do produto na loja, escolha <b>Copiar imagem</b> e cole aqui (ou use o botão para pegar da galeria).</p>
     <button class="sec" id="btnColarFoto" style="margin-top:0">📋 Colar foto copiada</button>
     <input id="foto" type="file" accept="image/*" style="margin-top:10px">
-    <div id="previa"><img id="previaImg" alt="Prévia da foto"></div>
+    <div id="previa">
+      <div class="molde">
+        <div class="area"><img id="previaImg" alt="Prévia de como a foto vai aparecer no site"></div>
+        <div class="rodape">É assim que vai aparecer no site</div>
+      </div>
+      <div class="recorte" id="avisoRecorte"></div>
+    </div>
 
     <button id="btnPublicar">Publicar no site</button>
     <div id="avisoNovo"></div>
@@ -134,6 +146,7 @@ a{color:var(--rose-deep)}
   <section class="box oculto" id="telaLista">
     <h2>No site agora (<span id="contagem">0</span>)</h2>
     <div id="lista"></div>
+    <div id="avisoLista"></div>
     <button class="sec" id="btnSair">Desconectar este celular</button>
   </section>
 
@@ -418,7 +431,7 @@ a{color:var(--rose-deep)}
           ctx.drawImage(im, 0, 0, l, a);
           var webp = c.toDataURL('image/webp').indexOf('image/webp') === 5;
           var url = c.toDataURL(webp ? 'image/webp' : 'image/jpeg', 0.82);
-          ok({ base64: url.split(',')[1], ext: webp ? 'webp' : 'jpg', previa: url });
+          ok({ base64: url.split(',')[1], ext: webp ? 'webp' : 'jpg', previa: url, largura: l, altura: a });
         };
         im.src = leitor.result;
       };
@@ -434,6 +447,23 @@ a{color:var(--rose-deep)}
         $('previaImg').src = r.previa;
         $('previa').style.display = 'block';
         avisar('avisoNovo', '');
+
+        // print da tela inteira é muito mais alto que largo: no card ele vira
+        // uma tirinha estreita, com o produto pequeno no meio do branco
+        var proporcao = r.altura / r.largura;
+        var aviso = $('avisoRecorte');
+        if (proporcao >= 1.6) {
+          aviso.innerHTML = 'Essa foto é bem mais alta que larga — parece print da tela inteira. ' +
+            'Veja acima como vai ficar: o produto sai pequeno. <b>Recorte só o produto</b> ' +
+            '(no celular, é só tocar em Editar/Recortar depois do print) e escolher de novo.';
+          aviso.style.display = 'block';
+        } else if (proporcao <= 0.55) {
+          aviso.innerHTML = 'Essa foto é bem mais larga que alta e vai aparecer pequena no card. ' +
+            'Se der, recorte para deixar mais quadrada.';
+          aviso.style.display = 'block';
+        } else {
+          aviso.style.display = 'none';
+        }
       })
       .catch(function (e) { fotoPronta = null; avisar('avisoNovo', e.message, 'erro'); });
   }
@@ -464,18 +494,47 @@ a{color:var(--rose-deep)}
         '<div class="meta">' + (p.preco || 'sem preço') + ' · ' + (p.loja || p.categoria) + '</div></div>' +
         '<button type="button">Excluir</button>';
       linha.querySelector('.nome').textContent = p.nome;
-      linha.querySelector('button').addEventListener('click', function () { excluir(p); });
+      (function (b) { b.addEventListener('click', function () { excluir(p, b); }); })(linha.querySelector('button'));
       alvo.appendChild(linha);
     });
   }
 
-  function excluir(p) {
+  function excluir(p, botao) {
     if (!confirm('Tirar "' + p.nome + '" do site?')) return;
-    dados.produtos = dados.produtos.filter(function (x) { return x.id !== p.id; });
-    avisar('avisoNovo', 'Removendo…', 'info');
-    gravarJson('remove: ' + p.nome)
-      .then(function () { desenharLista(); avisar('avisoNovo', 'Removido. Já saiu do site.', 'ok'); })
-      .catch(function (e) { avisar('avisoNovo', e.message, 'erro'); carregarDados().then(desenharLista); });
+
+    if (botao) { botao.disabled = true; botao.textContent = 'Saindo…'; }
+    avisar('avisoLista', 'Removendo “' + p.nome.slice(0, 40) + '”…', 'info');
+
+    // RELÊ do servidor antes de gravar. Sem isso, a gravação usa o identificador
+    // de versão de quando a página abriu e o GitHub recusa se o arquivo mudou —
+    // era esse o bug de 11/09/2026: a exclusão falhava e o aviso ficava fora da tela.
+    carregarDados()
+      .then(function () {
+        var antes = dados.produtos.length;
+        dados.produtos = dados.produtos.filter(function (x) { return x.id !== p.id; });
+        if (dados.produtos.length === antes) {
+          var erro = new Error('ja-nao-estava');
+          erro.jaSaiu = true;
+          throw erro;
+        }
+        return gravarJson('remove: ' + p.nome);
+      })
+      .then(function () {
+        desenharLista();
+        avisar('avisoLista', '“' + p.nome.slice(0, 40) + '” saiu do site. Se abrir o site agora, já não aparece.', 'ok');
+      })
+      .catch(function (e) {
+        if (e && e.jaSaiu) {
+          desenharLista();
+          avisar('avisoLista', 'Esse achadinho já não estava mais no site. Atualizei a lista.', 'info');
+          return;
+        }
+        avisar('avisoLista', 'Não consegui remover: ' + e.message, 'erro');
+        carregarDados().then(desenharLista).catch(function () {});
+      })
+      .then(function () {
+        if (botao) { botao.disabled = false; botao.textContent = 'Excluir'; }
+      });
   }
 
   // Link de PERFIL de afiliado leva a uma vitrine, não ao produto: quem clica
@@ -522,6 +581,8 @@ a{color:var(--rose-deep)}
     ['colagem', 'link', 'nome', 'preco', 'precoDe', 'foto'].forEach(function (c) { $(c).value = ''; });
     fotoPronta = null;
     $('previa').style.display = 'none';
+    $('avisoRecorte').style.display = 'none';
+    avisar('avisoLista', '');
     $('achou').style.display = 'none';
   }
 
